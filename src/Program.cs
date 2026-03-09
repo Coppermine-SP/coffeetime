@@ -59,17 +59,17 @@ namespace coffeetime
                 // };
             });
             var app = builder.Build();
-            app.MapGet("/account/login", (string? returnUrl) =>
+            app.MapGet("/oauth/signin", (string? returnUrl) =>
             {
                 return Results.Challenge(
                     new AuthenticationProperties
                     {
-                        RedirectUri = string.IsNullOrWhiteSpace(returnUrl) ? "/" : returnUrl
+                        RedirectUri = string.IsNullOrWhiteSpace(returnUrl) ? "/main" : returnUrl
                     },
                     new[] { OpenIdConnectDefaults.AuthenticationScheme });
             });
 
-            app.MapGet("/account/logout", () =>
+            app.MapGet("/oauth/signout", () =>
             {
                 return Results.SignOut(
                     new AuthenticationProperties
