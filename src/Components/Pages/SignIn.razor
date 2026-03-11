@@ -1,9 +1,21 @@
 ﻿@page "/" 
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
 @code{
-    protected override Task OnInitializedAsync()
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+    protected override async Task OnInitializedAsync()
     {
-        return base.OnInitializedAsync();
+        bool _isAuthenticated = false;
+        if (AuthenticationStateTask is not null)
+        {
+            var authState = await AuthenticationStateTask;
+            _isAuthenticated = authState.User.Identity?.IsAuthenticated == true;
+        }
+
+        if (_isAuthenticated)
+        {
+            Navigation.NavigateTo("/main", forceLoad: true);
+        }
     }
 }
 
