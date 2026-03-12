@@ -1,8 +1,13 @@
 ﻿using coffeetime.Components;
+using coffeetime.Contexts;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
+using System.Net;
 
 namespace coffeetime
 {
@@ -15,7 +20,22 @@ namespace coffeetime
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+            builder.Services.AddDbContextFactory<ServerDbContext>(opt =>
+                 opt.UseMySQL(builder.Configuration.GetSection("ConnectionStrings")["DefaultConnection"]!,
+                 o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                var cfg = builder.Configuration.GetSection("Proxy");
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto |
+                    ForwardedHeaders.XForwardedHost;
+
+                options.KnownProxies.Add(IPAddress.Parse(cfg["AllowedProxy"]!));
+                options.AllowedHosts.Add(cfg["AllowedHost"]!);
+            });
+            
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddAuthorization();
             builder.Services.AddAuthentication(options =>
@@ -28,7 +48,7 @@ namespace coffeetime
             {
                 var cfg = builder.Configuration.GetSection("Authentication:Adfs");
 
-                options.Authority = cfg["Authority"];          
+                options.Authority = cfg["Authority"];
                 options.ClientId = cfg["ClientId"];
                 options.ClientSecret = cfg["ClientSecret"];
 
@@ -40,23 +60,21 @@ namespace coffeetime
                 options.CallbackPath = "/signin-oidc";
                 options.SignedOutCallbackPath = "/signout-callback-oidc";
                 options.RemoteSignOutPath = "/signout-oidc";
+                options.ResponseType = "code";
+                options.ResponseMode = "form_post";
+                options.Resource = cfg["ResourceId"];
 
                 options.Scope.Clear();
                 options.Scope.Add("openid");
-                options.Scope.Add("profile");
+                options.Scope.Add("allatclaims");
 
-                // API 호출이나 토큰 재사용이 필요할 때만 유지
                 options.SaveTokens = true;
-
-                // ADFS가 내보내는 claim 이름을 그대로 쓰고 싶을 때
                 options.MapInboundClaims = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    NameClaimType = "name"
+                };
 
-                // ADFS가 실제로 어떤 claim을 내보내는지 보고 맞춰야 함
-                // options.TokenValidationParameters = new TokenValidationParameters
-                // {
-                //     NameClaimType = "upn",
-                //     RoleClaimType = "role"
-                // };
             });
             var app = builder.Build();
             app.MapGet("/oauth/signin", (string? returnUrl) =>
@@ -69,27 +87,37 @@ namespace coffeetime
                     new[] { OpenIdConnectDefaults.AuthenticationScheme });
             });
 
-            app.MapGet("/oauth/signout", () =>
+            app.MapGet("/oauth/signout", (bool singleSignOut) =>
             {
-                return Results.SignOut(
-                    new AuthenticationProperties
-                    {
-                        RedirectUri = "/"
-                    },
-                    new[]
-                    {
+                if (singleSignOut)
+                {
+                    return Results.SignOut(
+                        new AuthenticationProperties
+                        {
+                            RedirectUri = "/"
+                        },
+                        new[]
+                        {
                         CookieAuthenticationDefaults.AuthenticationScheme,
                         OpenIdConnectDefaults.AuthenticationScheme
-                    });
+                        });
+                }
+                else
+                {
+                    return Results.SignOut(
+                        new AuthenticationProperties
+                        {
+                            RedirectUri = "/"
+                        },
+                        new[]
+                        {
+                        CookieAuthenticationDefaults.AuthenticationScheme
+                        });
+                }
             });
 
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Error");
-            }
-
+            app.UseForwardedHeaders();
+            app.UseHttpsRedirection();
             app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
             app.MapStaticAssets();
             app.UseRouting();

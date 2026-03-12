@@ -9,13 +9,12 @@ namespace coffeetime.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ItemId { get; set; }
 
-        [Required]
+        [MaxLength(50)]
         public required string ItemName { get; set; }
 
-        [Required]
+        [MaxLength(200)]
         public string ItemDescription { get; set; } = string.Empty;
 
-        [Required]
         public uint ItemPrice { get; set; }
 
         public virtual List<PackageBatch> Batches { get; set; } = [];

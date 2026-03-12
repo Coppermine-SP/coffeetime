@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.InteropServices;
 
 namespace coffeetime.Models
 {
@@ -9,15 +10,23 @@ namespace coffeetime.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int BatchId { get; set; }
 
-        public required virtual Item Item { get; set; }
+        public int ItemId { get; set; }
+        public Item Item { get; set; } = null!;
 
-        [Required]
-        public DateTime RoastedAt { get; set; } = DateTime.Now;
+        public string OwnerUserId { get; set; } = null!;
+        public UserCache OwnerUser { get; set; } = null!;
 
-        [Required]
+        public DateTimeOffset RoastedAt { get; set; } = DateTimeOffset.UtcNow;
+
         [Range(1, 30)]
-        public required int BatchCount { get; set; }
+        public int BatchCount { get; set; }
 
-        public virtual List<Transcation> Transcations { get; set; } = [];
+        [Range(1, 30)]
+        public int TotalCount { get; set; }
+
+        [Range(0, 30)]
+        public int RemainingCount { get; set; }
+
+        public ICollection<BatchTake> Takes { get; } = [];
     }
 }
