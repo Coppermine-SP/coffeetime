@@ -2,12 +2,11 @@
 using coffeetime.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Security.Claims;
 
-namespace coffeetime.Components.Pages
+namespace coffeetime.Components.Layout
 {
-    public partial class MainPage(ILogger<MainPage> logger, ModalService modal, NavigationManager navi) : ComponentBase
+    public partial class MainLayout(ILogger<MainLayout> logger, ModalService modal, NavigationManager navi) : LayoutComponentBase
     {
         [CascadingParameter]
         private Task<AuthenticationState>? authenticationStateTask { get; set; }
