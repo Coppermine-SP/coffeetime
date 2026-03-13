@@ -1,0 +1,50 @@
+﻿@using coffeetime.Models
+@inherits ModalComponentBase
+
+@code {
+    [Parameter]
+    public Item Item { get; set; } = new Item()
+        {
+            ItemName = string.Empty
+        };
+
+    private async Task OnValidSubmitAsync()
+    {
+        await CloseModal(Item);
+    }
+}
+<EditForm Model="@Item" OnValidSubmit="@OnValidSubmitAsync">
+    <DataAnnotationsValidator/>
+
+    <div class="mb-3">
+        <label for="itemName" class="form-label">원두 이름</label>
+        <InputText class="form-control" id="itemName" placeholder="원두 이름을 입력하세요" @bind-Value="@Item.ItemName" />
+        <ValidationMessage class="validation-error" For="@(() => Item.ItemName)" />
+    </div>
+    <div class="mb-3">
+        <label for="itemDescription" class="form-label">원두 설명</label>
+        <InputText class="form-control" id="itemName" placeholder="원두 설명을 입력하세요" @bind-Value="@Item.ItemDescription" />
+        <ValidationMessage class="validation-error" For="@(() => Item.ItemDescription)" />
+    </div>
+    <div class="mb-3">
+        <label for="itemPrice" class="form-label">원두 가격</label>
+        <InputNumber class="form-control" min="0" step="1" @bind-Value="@Item.ItemPrice" placeholder="원두 가격을 입력하세요."/>
+        <ValidationMessage class="validation-error" For="@(() => Item.ItemPrice)" />
+    </div>
+    <div class="mb-3">
+        <label for="itemPrice" class="form-label">원두 용량</label>
+        <InputNumber class="form-control" min="0" step="1" @bind-Value="@Item.ItemSize" placeholder="원두 용량을 입력하세요. (단위: g)" />
+        <ValidationMessage class="validation-error" For="@(() => Item.ItemSize)" />
+    </div>
+
+    <div class="d-flex justify-content-end gap-3 py-2">
+        <button type="button"
+                class="btn btn-outline-secondary px-3 no-border-radius" @onclick="() => CloseModal()">
+            취소
+        </button>
+        <button type="submit"
+                class="btn btn-primary px-3 no-border-radius">
+            확인
+        </button>
+    </div>
+</EditForm>

@@ -13,6 +13,13 @@ body {
     background-repeat: no-repeat;
 }
 
+.validation-error{
+    color: red;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
 .dropdown-menu-nav{
     margin-top: 14px !important;
 }

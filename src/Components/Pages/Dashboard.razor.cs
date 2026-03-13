@@ -1,12 +1,13 @@
 ﻿using coffeetime.Components.Modal;
 using coffeetime.Contexts;
 using coffeetime.Models;
+using coffeetime.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 
 namespace coffeetime.Components.Pages
 {
-    public partial class Dashboard(IDbContextFactory<ServerDbContext> factory) : ComponentBase
+    public partial class Dashboard(IDbContextFactory<ServerDbContext> factory, ModalService modal, ItemService item, BatchService batch) : ComponentBase
     {
         public ICollection<PackageBatch> activeBatches = [];
         public ICollection<BatchTake> recentTakes = [];
@@ -33,7 +34,19 @@ namespace coffeetime.Components.Pages
             //This might cause a performance problem if the item collection is very huge.
             items = await context.Items
                 .AsNoTracking()
+                .OrderBy(x => x.ItemName)
                 .ToListAsync();
+        }
+
+        private async Task OnItemAddBtnClick()
+        {
+            var result = await modal.ShowAsync<EditItemModal, Item>("원두 추가");
+            if (!result.IsCancelled && result.Value is not null)
+            {
+                await item.AddItemsAsync(result.Value!);
+            }
+
+            StateHasChanged();
         }
     }
 }

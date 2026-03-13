@@ -93,6 +93,9 @@ namespace coffeetime
             });
             builder.Services.AddScoped<UserService>();
             builder.Services.AddScoped<ModalService>();
+            builder.Services.AddScoped<BatchService>();
+            builder.Services.AddScoped<ItemService>();
+            builder.Services.AddScoped<UserService>();
             var app = builder.Build();
             app.MapGet("/oauth/signin", (string? returnUrl) =>
             {
