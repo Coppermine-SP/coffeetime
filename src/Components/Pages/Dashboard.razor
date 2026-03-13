@@ -1,3 +1,72 @@
 ﻿@page "/dashboard"
+<div class="alert alert-success no-border-radius py-2">
+    <i class="bi bi-check-lg"></i>
+    대시보드에 오신 것을 환영합니다.
+</div>
+<div class="w-100" style="height: 380px">
+    <div class="card h-100 w-100 no-border-radius">
+        <div class="card-header">
+            <span>열린 배치</span>
+        </div>
+        @if (activeBatches.Count == 0)
+        {
+            <div class="card-body d-flex align-items-center align-content-center flex-column justify-content-center text-secondary">
+                <div class="d-flex flex-column align-items-center align-content-center ">
+                    <i class="bi bi-box-seam" style="font-size: 64px"></i>
+                    가져갈 수 있는 원두가 없습니다.
+                </div>
+                <div class="btn btn-dark mt-4 no-border-radius">
+                    <i class="bi bi-plus-lg"></i>
+                    새 원두 배치 추가하기
+                </div>
+            </div>
+        }
+        else
+        {
+            
+        }
+    </div>
+</div>
+<div class="row">
+    <div class="col-12 col-md-7 mt-3" style="height: 350px">
+        <div class="card h-100 w-100 no-border-radius">
+            <div class="card-header">
+                <span>최근 트랜젝션</span>
+            </div>
+            @if (recentTakes.Count == 0)
+            {
+                <div class="card-body d-flex align-items-center align-content-center flex-column justify-content-center text-secondary">
+                    <div class="d-flex flex-column align-items-center align-content-center ">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 64px"></i>
+                        표시할 데이터가 없습니다.
+                    </div>
+                </div>
+            }
+            else
+            {
 
-<h4>홈</h4>
+            }
+        </div>
+    </div>
+
+    <div class="col-12 col-md-5 mt-3" style="height: auto">
+        <div class="card h-100 w-100 no-border-radius">
+            <div class="card-header">
+                <span>원두</span>
+            </div>
+            @if (recentTakes.Count == 0)
+            {
+                <div class="card-body d-flex align-items-center align-content-center flex-column justify-content-center text-secondary">
+                    <div class="d-flex flex-column align-items-center align-content-center ">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 64px"></i>
+                        표시할 데이터가 없습니다.
+                    </div>
+                </div>
+            }
+            else
+            {
+
+            }
+        </div>
+    </div>
+</div>
