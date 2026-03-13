@@ -41,11 +41,13 @@ namespace coffeetime.Migrations
 
                     b.HasKey("BatchTakeId");
 
+                    b.HasIndex("CreatedAtUtc")
+                        .HasDatabaseName("IX_take_created");
+
+                    b.HasIndex("TakenByUserId");
+
                     b.HasIndex("BatchId", "CreatedAtUtc")
                         .HasDatabaseName("IX_take_batch_created");
-
-                    b.HasIndex("TakenByUserId", "CreatedAtUtc")
-                        .HasDatabaseName("IX_take_user_created");
 
                     b.ToTable("batch_takes", null, t =>
                         {
@@ -71,6 +73,9 @@ namespace coffeetime.Migrations
 
                     b.Property<uint>("ItemPrice")
                         .HasColumnType("int unsigned");
+
+                    b.Property<int>("ItemSize")
+                        .HasColumnType("int");
 
                     b.HasKey("ItemId");
 
@@ -107,6 +112,9 @@ namespace coffeetime.Migrations
 
                     b.HasIndex("OwnerUserId", "RemainingCount")
                         .HasDatabaseName("IX_pkg_owner_remaining");
+
+                    b.HasIndex("RemainingCount", "RoastedAtUtc")
+                        .HasDatabaseName("IX_pkg_remaining_roasted");
 
                     b.ToTable("package_batches", null, t =>
                         {

@@ -110,6 +110,9 @@ namespace coffeetime.Contexts
 
                 entity.HasIndex(e => new { e.ItemId, e.RoastedAtUtc })
                     .HasDatabaseName("IX_pkg_item_roasted");
+
+                entity.HasIndex(e => new { e.OwnerUserId, e.RemainingCount })
+                    .HasDatabaseName("IX_pkg_owner_remaining");
             });
 
             modelBuilder.Entity<BatchTake>(entity =>

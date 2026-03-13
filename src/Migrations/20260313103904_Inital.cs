@@ -23,7 +23,8 @@ namespace coffeetime.Migrations
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     ItemName = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
                     ItemDescription = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
-                    ItemPrice = table.Column<uint>(type: "int unsigned", nullable: false)
+                    ItemPrice = table.Column<uint>(type: "int unsigned", nullable: false),
+                    ItemSize = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -107,14 +108,19 @@ namespace coffeetime.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateIndex(
+                name: "IX_batch_takes_TakenByUserId",
+                table: "batch_takes",
+                column: "TakenByUserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_take_batch_created",
                 table: "batch_takes",
                 columns: new[] { "BatchId", "CreatedAtUtc" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_take_user_created",
+                name: "IX_take_created",
                 table: "batch_takes",
-                columns: new[] { "TakenByUserId", "CreatedAtUtc" });
+                column: "CreatedAtUtc");
 
             migrationBuilder.CreateIndex(
                 name: "IX_pkg_item_roasted",
@@ -125,6 +131,11 @@ namespace coffeetime.Migrations
                 name: "IX_pkg_owner_remaining",
                 table: "package_batches",
                 columns: new[] { "OwnerUserId", "RemainingCount" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_pkg_remaining_roasted",
+                table: "package_batches",
+                columns: new[] { "RemainingCount", "RoastedAtUtc" });
         }
 
         /// <inheritdoc />
