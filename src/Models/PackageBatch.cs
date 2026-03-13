@@ -13,16 +13,14 @@ namespace coffeetime.Models
         public int ItemId { get; set; }
         public Item Item { get; set; } = null!;
 
+        [MaxLength(36)]
         public string OwnerUserId { get; set; } = null!;
         public UserCache OwnerUser { get; set; } = null!;
 
-        public DateTimeOffset RoastedAt { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset RoastedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
         [Range(1, 30)]
         public int BatchCount { get; set; }
-
-        [Range(1, 30)]
-        public int TotalCount { get; set; }
 
         [Range(0, 30)]
         public int RemainingCount { get; set; }

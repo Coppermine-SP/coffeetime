@@ -18,6 +18,6 @@ namespace coffeetime.Models
         [Range(1, 10)]
         public int Quantity { get; set; }
 
-        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
     }
 }

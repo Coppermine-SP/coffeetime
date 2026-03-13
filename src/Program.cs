@@ -1,5 +1,6 @@
 ﻿using coffeetime.Components;
 using coffeetime.Contexts;
+using coffeetime.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -15,6 +16,7 @@ namespace coffeetime
     {
         public static void Main(string[] args)
         {
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
@@ -35,7 +37,8 @@ namespace coffeetime
                 options.KnownProxies.Add(IPAddress.Parse(cfg["AllowedProxy"]!));
                 options.AllowedHosts.Add(cfg["AllowedHost"]!);
             });
-            
+            builder.Services.AddMemoryCache();
+            builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddAuthorization();
             builder.Services.AddAuthentication(options =>
@@ -74,8 +77,22 @@ namespace coffeetime
                 {
                     NameClaimType = "name"
                 };
+                options.Events = new OpenIdConnectEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var userObjectGuid = context.Principal?.FindFirst("oid")?.Value;
+                        var userDisplayName = context.Principal?.FindFirst("name")?.Value;
+                        if (!string.IsNullOrWhiteSpace(userObjectGuid) && !string.IsNullOrWhiteSpace(userDisplayName))
+                        {
+                            var userService = context.HttpContext.RequestServices.GetRequiredService<UserService>();
+                            await userService.CreateOrUpdateUserCacheAsync(userObjectGuid, userDisplayName);
+                        }
+                    }
+                };
 
             });
+            builder.Services.AddScoped<UserService>();
             var app = builder.Build();
             app.MapGet("/oauth/signin", (string? returnUrl) =>
             {
