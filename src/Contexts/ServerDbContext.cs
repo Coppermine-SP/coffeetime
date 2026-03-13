@@ -105,8 +105,8 @@ namespace coffeetime.Contexts
                     .OnDelete(DeleteBehavior.Restrict)
                     .HasConstraintName("FK_pkg_batch_owner");
 
-                entity.HasIndex(e => new { e.OwnerUserId, e.RemainingCount })
-                    .HasDatabaseName("IX_pkg_owner_remaining");
+                entity.HasIndex(e => new { e.RemainingCount, e.RoastedAtUtc })
+                    .HasDatabaseName("IX_pkg_remaining_roasted");
 
                 entity.HasIndex(e => new { e.ItemId, e.RoastedAtUtc })
                     .HasDatabaseName("IX_pkg_item_roasted");
@@ -157,8 +157,8 @@ namespace coffeetime.Contexts
                 entity.HasIndex(e => new { e.BatchId, e.CreatedAtUtc })
                     .HasDatabaseName("IX_take_batch_created");
 
-                entity.HasIndex(e => new { e.TakenByUserId, e.CreatedAtUtc })
-                    .HasDatabaseName("IX_take_user_created");
+                entity.HasIndex(e => new { e.CreatedAtUtc})
+                    .HasDatabaseName("IX_take_created");
             });
         }
     }

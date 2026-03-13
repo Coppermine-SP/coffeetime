@@ -11,7 +11,7 @@ using coffeetime.Contexts;
 namespace coffeetime.Migrations
 {
     [DbContext(typeof(ServerDbContext))]
-    [Migration("20260313013954_Inital")]
+    [Migration("20260313070718_Inital")]
     partial class Inital
     {
         /// <inheritdoc />
@@ -116,8 +116,6 @@ namespace coffeetime.Migrations
                             t.HasCheckConstraint("CK_pkg_batch_count", "`BatchCount` BETWEEN 1 AND 30");
 
                             t.HasCheckConstraint("CK_pkg_remaining_count", "`RemainingCount` BETWEEN 0 AND 30");
-
-                            t.HasCheckConstraint("CK_pkg_remaining_lte_total", "`RemainingCount` <= `TotalCount`");
                         });
                 });
 

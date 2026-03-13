@@ -113,8 +113,6 @@ namespace coffeetime.Migrations
                             t.HasCheckConstraint("CK_pkg_batch_count", "`BatchCount` BETWEEN 1 AND 30");
 
                             t.HasCheckConstraint("CK_pkg_remaining_count", "`RemainingCount` BETWEEN 0 AND 30");
-
-                            t.HasCheckConstraint("CK_pkg_remaining_lte_total", "`RemainingCount` <= `TotalCount`");
                         });
                 });
 
