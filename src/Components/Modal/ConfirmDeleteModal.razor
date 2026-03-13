@@ -1,0 +1,25 @@
+@inherits ModalComponentBase
+<p>이 동작을 정말 계속하시겠습니까?<br/>이 개체와 연관된 모든 연결 개체가 삭제됩니다.<br/><br/><strong>이 작업은 되돌릴 수 없습니다.</strong></p>
+<InputText class="form-control" id="categoryName" placeholder="@RefText" @bind-Value="@_type"/>
+@if (!ValidateModel)
+{
+    <div class="form-text text-danger">
+        정확하게 "@(RefText)"라고 입력하십시오.
+    </div>
+}
+<div class="d-flex justify-content-end gap-3 py-2 ">
+        <button type="button"
+            class="btn btn-outline-secondary px-3 no-border-radius" @onclick="() => CloseModal(false)">
+            취소
+        </button>
+    <button type="button"
+            class="btn btn-primary px-3 no-border-radius" @onclick="() => CloseModal(true)" disabled="@(!ValidateModel)">
+        확인
+    </button>
+</div>
+@code {
+    private const string RefText = "본인은 데이터 정합성에 대해 이해했습니다.";
+    private string _type = "";
+    
+    private bool ValidateModel => string.Equals(RefText, _type);
+}

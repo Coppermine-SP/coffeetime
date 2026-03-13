@@ -1,6 +1,7 @@
 ﻿@page "/" 
 @using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
+@layout EmptyLayout
 @code{
     [CascadingParameter] private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
     protected override async Task OnInitializedAsync()

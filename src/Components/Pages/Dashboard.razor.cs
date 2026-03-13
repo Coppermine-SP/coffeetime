@@ -43,10 +43,37 @@ namespace coffeetime.Components.Pages
             var result = await modal.ShowAsync<EditItemModal, Item>("원두 추가");
             if (!result.IsCancelled && result.Value is not null)
             {
-                await item.AddItemsAsync(result.Value!);
+                await item.AddItemAsync(result.Value!);
+            }
+
+            await OnInitializedAsync();
+        }
+
+        private async Task OnItemEditBtnClick(Item x)
+        {
+            var result = await modal.ShowAsync<EditItemModal, Item>("원두 편집",
+                new ModalParameterBuilder()
+                .Add("Item", x)
+                .Build());
+
+            if (!result.IsCancelled && result.Value is not null)
+            {
+                await item.UpdateItemAsync(result.Value!);
             }
 
             StateHasChanged();
+        }
+
+        private async Task OnItemDeleteBtnClick(Item x)
+        {
+            var result = await modal.ShowAsync<ConfirmDeleteModal, bool>("경고");
+
+            if (!result.IsCancelled && result.Value)
+            {
+                await item.DeleteItemAsync(x.ItemId);
+            }
+
+            await OnInitializedAsync();
         }
     }
 }
