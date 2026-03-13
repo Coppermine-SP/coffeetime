@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["coffeetime.styles.css"]" />
     <ImportMap />
-    <HeadOutlet />
+    <HeadOutlet @rendermode="InteractiveServer" />
     <script>
         function applySystemTheme() {
           const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -28,10 +28,11 @@
 </head>
 
 <body>
-    <Routes />
+    <Routes @rendermode="InteractiveServer" />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
-    <script src="@Assets["vendors/bootstrap/js/bootstrap.min.js"]"></script>
+    <script src="@Assets["app.js"]"></script>
+    <script src="@Assets["vendors/bootstrap/js/bootstrap.bundle.min.js"]"></script>
 </body>
 
 </html>

@@ -38,7 +38,6 @@ namespace coffeetime
                 options.AllowedHosts.Add(cfg["AllowedHost"]!);
             });
             builder.Services.AddMemoryCache();
-            builder.Services.AddResponseCompression(o => o.EnableForHttps = true);
             builder.Services.AddCascadingAuthenticationState();
             builder.Services.AddAuthorization();
             builder.Services.AddAuthentication(options =>
@@ -93,6 +92,7 @@ namespace coffeetime
 
             });
             builder.Services.AddScoped<UserService>();
+            builder.Services.AddScoped<ModalService>();
             var app = builder.Build();
             app.MapGet("/oauth/signin", (string? returnUrl) =>
             {
@@ -137,13 +137,11 @@ namespace coffeetime
             app.UseHttpsRedirection();
             app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
             app.MapStaticAssets();
-            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseAntiforgery();
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
-
             app.Run();
         }
     }
