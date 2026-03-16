@@ -2,25 +2,25 @@ body {
     font-family: 'Noto Sans KR', sans-serif !important;
 }
 
-.no-border-radius{
+.no-border-radius {
     border-radius: 0;
 }
 
-.logo{
+.logo {
     width: 150px;
     height: 20px;
     background-size: contain;
     background-repeat: no-repeat;
 }
 
-.validation-error{
+.validation-error {
     color: red;
     font-size: 14px;
     font-weight: 600;
     margin-top: 5px;
 }
 
-.dropdown-menu-nav{
+.dropdown-menu-nav {
     margin-top: 14px !important;
 }
 
@@ -55,27 +55,28 @@ body {
 }
 
 .git-log-item {
+    --git-rail-center: 1rem;
     position: relative;
     display: grid;
     grid-template-columns: 2rem minmax(0, 1fr);
     column-gap: .75rem;
 }
 
-.git-log-item:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    left: calc(1rem - 1px);
-    top: 1.3rem;
-    bottom: -1rem;
-    width: 2px;
-    background-color: var(--bs-border-color);
-}
+    .git-log-item:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        left: calc(var(--git-rail-center) - 1px);
+        top: 1.3rem;
+        bottom: -1rem;
+        width: 2px;
+        background-color: var(--bs-border-color);
+    }
 
 .git-log-rail {
     display: flex;
     justify-content: center;
+    width: 100%;
 }
-
 
 .git-log-dot {
     width: .85rem;
@@ -88,10 +89,10 @@ body {
     z-index: 1;
 }
 
-.git-log-dot.is-head {
-    background-color: var(--bs-success);
-    box-shadow: 0 0 0 2px rgba(var(--bs-success-rgb), .2);
-}
+    .git-log-dot.is-head {
+        background-color: var(--bs-success);
+        box-shadow: 0 0 0 2px rgba(var(--bs-success-rgb), .2);
+    }
 
 .git-log-content {
     min-width: 0;
@@ -116,6 +117,7 @@ body {
 
 @media (max-width: 575.98px) {
     .git-log-item {
+        --git-rail-center: .75rem;
         grid-template-columns: 1.5rem minmax(0, 1fr);
         column-gap: .5rem;
     }
@@ -124,7 +126,7 @@ body {
         padding: .8rem .85rem;
     }
 
-    .git-log-item:not(:last-child) .git-log-rail::after {
+    .git-log-item:not(:last-child)::after {
         bottom: -1.25rem;
     }
 }
