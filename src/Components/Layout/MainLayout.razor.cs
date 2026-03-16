@@ -11,7 +11,7 @@ namespace coffeetime.Components.Layout
         [CascadingParameter]
         private Task<AuthenticationState>? authenticationStateTask { get; set; }
 
-        private ClaimsPrincipal principal;
+        private ClaimsPrincipal? principal;
         protected override async Task OnInitializedAsync()
         {
             if (authenticationStateTask != null)

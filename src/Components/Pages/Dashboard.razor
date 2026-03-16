@@ -1,10 +1,12 @@
 ﻿@page "/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 <div class="alert alert-success no-border-radius py-2">
     <i class="bi bi-check-lg"></i>
     대시보드에 오신 것을 환영합니다.
 </div>
-<div class="w-100" style="height: 380px">
-    <div class="card h-100 w-100 no-border-radius">
+<div class="w-100" style="height: 300px">
+    <div class="card h-100 w-100 no-border-radius d-flex flex-column">
         <div class="card-header d-flex justify-content-between">
             <span>배치</span>
             <div>
@@ -12,8 +14,8 @@
                     <i class="bi bi-three-dots-vertical"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end shadow no-border-radius">
-                    <li class="dropdown-item">새 배치 추가하기</li>
-                    <li class="dropdown-item">배치 상세보기</li>
+                    <li class="dropdown-item" @onclick="OnBatchAddBtnClick">새 배치 추가하기</li>
+                    <a class="dropdown-item" href="/batches">배치 관리자</a>
                 </ul>
             </div>
         </div>
@@ -24,15 +26,71 @@
                     <i class="bi bi-box-seam" style="font-size: 64px"></i>
                     가져갈 수 있는 원두가 없습니다.
                 </div>
-                <div class="btn btn-dark mt-4 no-border-radius">
+                <button class="btn btn-dark mt-4 no-border-radius" @onclick="OnBatchAddBtnClick">
                     <i class="bi bi-plus-lg"></i>
                     새 원두 배치 추가하기
-                </div>
+                </button>
             </div>
         }
         else
         {
-            
+            <div class="card-body flex-grow-1 overflow-y-auto overflow-x-hidden p-3">
+                <div class="row row-cols-1 row-cols-sm-3 row-cols-xl-4 g-3">
+                    @foreach (var batch in activeBatches)
+                    {
+                        <div class="col" @key="batch.BatchId">
+                            <div class="card h-100 shadow-sm no-border-radius">
+                                <div class="card-body d-flex flex-column bg-body-tertiary">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div class="overflow-hidden">
+                                            <h6 class="card-title mb-1 text-truncate">@batch.Item.ItemName</h6>
+                                            <div class="small text-body-secondary">
+                                                배치 #@batch.BatchId
+                                            </div>
+                                        </div>
+
+                                        <span class="badge text-bg-light border">
+                                            @batch.OwnerUser.UserDisplayName
+                                        </span>
+                                    </div>
+
+                                    <div class="mt-3">
+                                        <div class="d-flex justify-content-between small">
+                                            <span class="text-body-secondary">총량</span>
+                                            <span class="fw-semibold">@GetBatchTotalText(batch)</span>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between small mt-1">
+                                            <span class="text-body-secondary">남은량</span>
+                                            <span class="fw-semibold @(batch.RemainingCount > 0 ? "text-success" : "text-danger")">
+                                                @GetBatchRemainingText(batch)
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="progress mt-3"
+                                         role="progressbar"
+                                         aria-label="남은 수량 비율"
+                                         aria-valuenow="@GetRemainingPercent(batch)"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100">
+                                        <div class="progress-bar"
+                                             style="@($"width: {GetRemainingPercent(batch)}%;")">
+                                        </div>
+                                    </div>
+
+                                    <button class="btn btn-dark w-100 mt-3 no-border-radius"
+                                            disabled="@(batch.RemainingCount <= 0)"
+                                            @onclick="() => OnBatchTakeBtnClick(batch)">
+                                        <i class="bi bi-basket3-fill me-2"></i>
+                                        가져가기
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         }
     </div>
 </div>
@@ -61,7 +119,60 @@
             }
             else
             {
+                <div class="card-body overflow-y-auto p-0">
+                    <div class="git-log px-3 py-2">
+                        @{
+                            int i = 0;
+                        }
+                        @foreach (var take in recentTakes)
+                        {
+                            var isHead = i++ == 0;
 
+                            <article class="git-log-item py-2" @key="take.BatchTakeId">
+                                <div class="git-log-rail" aria-hidden="true">
+                                    <span class="git-log-dot @(isHead ? "is-head" : "")"></span>
+                                </div>
+
+                                <div class="git-log-content shadow-sm">
+                                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                                        <div class="d-flex flex-wrap align-items-center gap-2">
+                                            <span class="badge text-bg-dark rounded-pill font-monospace">
+                                                commit @take.BatchTakeId
+                                            </span>
+
+                                            @if (isHead)
+                                            {
+                                                <span class="badge text-bg-success rounded-pill font-monospace">
+                                                    HEAD
+                                                </span>
+                                            }
+
+                                            <span class="fw-semibold">@take.TakenByUser.UserDisplayName</span>
+                                        </div>
+
+                                        <span class="small text-body-secondary font-monospace">
+                                            @FormatTakeTime(take.CreatedAtUtc)
+                                        </span>
+                                    </div>
+
+                                    <div class="git-log-command mt-3">
+                                        <span class="text-body-secondary">coffee take</span>
+                                        <span>--batch</span>
+                                        <strong>#@take.BatchId</strong>
+                                        <span>--qty</span>
+                                        <strong>@take.Quantity 개</strong>
+                                    </div>
+
+                                    <div class="small text-body-secondary mt-2">
+                                        <span class="fw-semibold text-body">@take.TakenByUser.UserDisplayName</span>님이
+                                        배치 <span class="font-monospace text-body">#@take.BatchId</span>에서
+                                        <span class="font-monospace text-body">@take.Quantity 개</span>를 가져갔습니다.
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </div>
             }
         </div>
     </div>

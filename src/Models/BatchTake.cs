@@ -15,7 +15,7 @@ namespace coffeetime.Models
         public string TakenByUserId { get; set; } = null!;
         public UserCache TakenByUser { get; set; } = null!;
 
-        [Range(1, 10)]
+        [Range(1, 100)]
         public int Quantity { get; set; }
 
         public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;

@@ -1,0 +1,140 @@
+﻿@using coffeetime.Models
+@using Microsoft.AspNetCore.Components.Forms
+@inherits ModalComponentBase
+@implements IDisposable
+
+<EditForm EditContext="_editContext" OnValidSubmit="OnValidSubmitAsync">
+    <DataAnnotationsValidator />
+
+    <div class="alert alert-warning no-border-radius py-2">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        배치를 한번 생성하면 수정할 수 없습니다.
+    </div>
+
+    <div class="alert alert-info no-border-radius py-2">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        @GetBatchInfo()
+    </div>
+
+    <div class="mb-3">
+        <label for="itemId" class="form-label">원두 종류</label>
+        <InputSelect class="form-select" id="itemId" @bind-Value="_batch.ItemId">
+            <option value="0">원두를 선택하세요</option>
+            @foreach (var item in Items)
+            {
+                <option value="@item.ItemId">@item.ItemName</option>
+            }
+        </InputSelect>
+        <ValidationMessage class="validation-error" For="@(() => _batch.ItemId)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="batchCount" class="form-label">분할 수량</label>
+        <InputNumber min="1"
+                     step="1"
+                     class="form-control"
+                     id="batchCount"
+                     placeholder="분할 수량을 입력하세요"
+                     @bind-Value="_batch.BatchCount" />
+        <ValidationMessage class="validation-error" For="@(() => _batch.BatchCount)" />
+    </div>
+
+    <div class="mb-3">
+        <label for="roastedAtUtc" class="form-label">로스팅 일자</label>
+        <InputDate class="form-control"
+                   id="roastedAtUtc"
+                   @bind-Value="_batch.RoastedAtUtc" />
+        <ValidationMessage class="validation-error" For="@(() => _batch.RoastedAtUtc)" />
+    </div>
+
+    <div class="d-flex justify-content-end gap-3 py-2">
+        <button type="button"
+                class="btn btn-outline-secondary px-3 no-border-radius"
+                @onclick="() => CloseModal()">
+            취소
+        </button>
+        <button type="submit"
+                class="btn btn-primary px-3 no-border-radius">
+            확인
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public required ICollection<Item> Items { get; set; }
+
+    private readonly PackageBatch _batch = new()
+    {
+        RoastedAtUtc = DateTime.UtcNow
+    };
+
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messageStore = default!;
+
+    private Item? SelectedItem => Items.FirstOrDefault(x => x.ItemId == _batch.ItemId);
+
+    protected override void OnInitialized()
+    {
+        _editContext = new EditContext(_batch);
+        _messageStore = new ValidationMessageStore(_editContext);
+
+        _editContext.OnValidationRequested += HandleValidationRequested;
+    }
+
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
+    {
+        _messageStore.Clear();
+
+        if (_batch.ItemId <= 0)
+        {
+            _messageStore.Add(
+                _editContext.Field(nameof(PackageBatch.ItemId)),
+                "원두를 선택하세요.");
+        }
+
+        if (_batch.BatchCount <= 0)
+        {
+            _messageStore.Add(
+                _editContext.Field(nameof(PackageBatch.BatchCount)),
+                "분할 수량은 1 이상이어야 합니다.");
+        }
+
+        var item = SelectedItem;
+        if (item is not null && _batch.BatchCount > 0)
+        {
+            decimal splitSize = (decimal)item.ItemSize / _batch.BatchCount;
+
+            if (splitSize < 1m)
+            {
+                _messageStore.Add(
+                    _editContext.Field(nameof(PackageBatch.BatchCount)),
+                    "분할 후 각 배치 용량은 1g 이상이어야 합니다.");
+            }
+        }
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        await CloseModal(_batch);
+    }
+
+    private string GetBatchInfo()
+    {
+        int batchCount = _batch.BatchCount >= 100 ? 100 : _batch.BatchCount;
+        if (SelectedItem is null || batchCount <= 0)
+        {
+            return "아직 원물이 선택되지 않았습니다.";
+        }
+
+        decimal splitSize = (decimal)SelectedItem.ItemSize / batchCount;
+        decimal splitPrice = (decimal)SelectedItem.ItemPrice / batchCount;
+
+        return $"분할 당 {splitSize:N2}g이며, 가격은 {splitPrice:N0}KRW 입니다.";
+    }
+
+    public void Dispose()
+    {
+        _editContext.OnValidationRequested -= HandleValidationRequested;
+    }
+}

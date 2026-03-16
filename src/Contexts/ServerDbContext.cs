@@ -62,11 +62,11 @@ namespace coffeetime.Contexts
                 {
                     tb.HasCheckConstraint(
                         "CK_pkg_batch_count",
-                        "`BatchCount` BETWEEN 1 AND 30");
+                        "`BatchCount` BETWEEN 1 AND 100");
 
                     tb.HasCheckConstraint(
                         "CK_pkg_remaining_count",
-                        "`RemainingCount` BETWEEN 0 AND 30");
+                        "`RemainingCount` BETWEEN 0 AND 100");
                 });
 
                 entity.HasKey(e => e.BatchId);
@@ -121,7 +121,7 @@ namespace coffeetime.Contexts
                 {
                     tb.HasCheckConstraint(
                         "CK_batch_take_qty",
-                        "`Quantity` BETWEEN 1 AND 10");
+                        "`Quantity` BETWEEN 1 AND 100");
                 });
 
                 entity.HasKey(e => e.BatchTakeId);
