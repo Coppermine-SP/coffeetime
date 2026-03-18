@@ -1,12 +1,657 @@
 ﻿@page "/transactions"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
 @attribute [Authorize]
-<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+
+<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb" class="mb-2">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="/dashboard">홈</a></li>
         <li class="breadcrumb-item active" aria-current="page">트랜잭션 상세조회</li>
     </ol>
 </nav>
-@code {
 
-}
+<div class="card shadow-sm no-border-radius mb-3">
+    <div class="card-header bg-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 bg-body-tertiary">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-semibold">검색 옵션</span>
+        </div>
+    </div>
+
+    <div class="card-body search-grid">
+        <div class="row g-3">
+            <div class="col-12 col-xl-4">
+                <label for="transaction-keyword" class="form-label">검색어</label>
+                <InputText id="transaction-keyword"
+                           class="form-control no-border-radius"
+                           @bind-Value="filter.Keyword"
+                           placeholder="트랜잭션 #, 배치 #, 원두명, 사용자" />
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <label class="form-label">가져간 사용자</label>
+                <InputSelect class="form-select no-border-radius" @bind-Value="filter.TakenByUserId">
+                    <option value="">전체</option>
+                    @foreach (var user in takeUserOptions)
+                    {
+                        <option value="@user.UserId">@user.UserDisplayName</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <label class="form-label">배치 등록자</label>
+                <InputSelect class="form-select no-border-radius" @bind-Value="filter.BatchOwnerUserId">
+                    <option value="">전체</option>
+                    @foreach (var owner in ownerOptions)
+                    {
+                        <option value="@owner.UserId">@owner.UserDisplayName</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <label class="form-label">배치 상태</label>
+                <InputSelect class="form-select no-border-radius" @bind-Value="filter.BatchStatus">
+                    <option value="@BatchStatusFilter.All">전체</option>
+                    <option value="@BatchStatusFilter.Active">활성</option>
+                    <option value="@BatchStatusFilter.Ended">종료</option>
+                </InputSelect>
+            </div>
+
+            <div class="col-6 col-md-4 col-xl-2">
+                <label class="form-label">페이지 크기</label>
+                <InputSelect class="form-select no-border-radius" @bind-Value="filter.PageSize">
+                    <option value="10">10건</option>
+                    <option value="20">20건</option>
+                    <option value="30">30건</option>
+                    <option value="50">50건</option>
+                </InputSelect>
+            </div>
+
+            <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label">시작일</label>
+                <InputDate class="form-control no-border-radius" @bind-Value="filter.FromDate" />
+            </div>
+
+            <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label">종료일</label>
+                <InputDate class="form-control no-border-radius" @bind-Value="filter.ToDate" />
+            </div>
+
+            <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label">정렬 기준</label>
+                <InputSelect class="form-select no-border-radius" @bind-Value="filter.SortBy">
+                    <option value="@TransactionSortBy.CreatedAt">생성 일시</option>
+                    <option value="@TransactionSortBy.TransactionId">트랜잭션 번호</option>
+                    <option value="@TransactionSortBy.User">가져간 사용자</option>
+                    <option value="@TransactionSortBy.BatchId">배치 번호</option>
+                    <option value="@TransactionSortBy.ItemName">원두명</option>
+                    <option value="@TransactionSortBy.Quantity">수량</option>
+                    <option value="@TransactionSortBy.Amount">추정 금액</option>
+                </InputSelect>
+            </div>
+
+            <div class="col-6 col-md-3 col-xl-2">
+                <label class="form-label">방향</label>
+                <InputSelect class="form-select no-border-radius" @bind-Value="filter.SortDirection">
+                    <option value="@SortDirection.Desc">내림차순</option>
+                    <option value="@SortDirection.Asc">오름차순</option>
+                </InputSelect>
+            </div>
+
+            <div class="col-12 col-md-6 col-xl-12 d-grid d-sm-flex justify-content-xl-end gap-2 align-items-end">
+                <button type="button"
+                        class="btn btn-dark no-border-radius flex-fill flex-sm-grow-0"
+                        @onclick="ApplyFilterAsync"
+                        disabled="@isLoading">
+                    <i class="bi bi-search me-2"></i>
+                    조회
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline-secondary no-border-radius flex-fill flex-sm-grow-0"
+                        @onclick="ResetFilterAsync"
+                        disabled="@isLoading">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>
+                    초기화
+                </button>
+            </div>
+        </div>
+
+        <div class="small text-secondary text-end mt-3">
+            현재 표시: <strong>@StartRow</strong> - <strong>@EndRow</strong> / 총 <strong>@totalCount</strong>건
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3">
+        <div class="summary-tile p-3 h-100 no-border-radius">
+            <div class="small text-secondary">트랜잭션 수</div>
+            <div class="summary-value">@($"{totalCount:N0}건")</div>
+            <div class="small text-secondary mt-2">현재 조건에 맞는 전체 이력</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="summary-tile p-3 h-100 no-border-radius">
+            <div class="small text-secondary">총 출고 수량</div>
+            <div class="summary-value text-success">@($"{totalQuantity:N0}개")</div>
+            <div class="small text-secondary mt-2">필터 조건 기준 합계</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="summary-tile p-3 h-100 no-border-radius">
+            <div class="small text-secondary">참여 범위</div>
+            <div class="summary-value">@($"{uniqueUserCount:N0}명 / {uniqueBatchCount:N0}배치")</div>
+            <div class="small text-secondary mt-2">사용자 수 / 배치 수</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+        <div class="summary-tile p-3 h-100 no-border-radius">
+            <div class="small text-secondary">추정 금액</div>
+            <div class="summary-value">@FormatKrw(filteredTotalEstimatedAmount)</div>
+            <div class="small text-secondary mt-2">
+                현재 페이지 @FormatKrw(CurrentPageEstimatedAmount)
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm no-border-radius mb-4">
+    <div class="card-header bg-body d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2 bg-body-tertiary">
+        <div class="d-flex align-items-center gap-2">
+            <span class="fw-semibold">트랜잭션 목록</span>
+            @if (isLoading)
+            {
+                <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                <span class="small text-secondary">불러오는 중...</span>
+            }
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        @if (isLoading && pagedTransactions.Count == 0)
+        {
+            <div class="p-5 text-center text-secondary">
+                <div class="spinner-border mb-3" role="status" aria-hidden="true"></div>
+                <div>트랜잭션 데이터를 불러오는 중입니다.</div>
+            </div>
+        }
+        else if (pagedTransactions.Count == 0)
+        {
+            <div class="p-5 text-center text-secondary">
+                <i class="bi bi-receipt-cutoff" style="font-size: 56px"></i>
+                <div class="mt-3 fw-semibold">조건에 맞는 트랜잭션이 없습니다.</div>
+                <div class="small mt-1">검색 조건을 조정하거나 초기화해 보십시오.</div>
+            </div>
+        }
+        else
+        {
+            <div class="d-none d-lg-block">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 transactions-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center" style="width:72px;"></th>
+                                <th>트랜잭션</th>
+                                <th>사용자</th>
+                                <th>배치</th>
+                                <th>원두</th>
+                                <th class="text-end">수량</th>
+                                <th class="text-end">추정 중량</th>
+                                <th class="text-end">추정 금액</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tx in pagedTransactions)
+                            {
+                                var batchUserRows = GetBatchUserSummaryRows(tx.BatchId);
+                                var batchHistoryRows = GetBatchHistoryRows(tx.BatchId);
+
+                                <tr class="transaction-row-main @(tx.IsBatchActive ? string.Empty : "is-ended")" @key="tx.BatchTakeId">
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary no-border-radius"
+                                                @onclick="() => ToggleExpand(tx.BatchTakeId)">
+                                            <i class="bi @(IsExpanded(tx.BatchTakeId) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                                        </button>
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold font-monospace">T#@tx.BatchTakeId</div>
+                                        <div class="small text-secondary">@FormatDateTime(tx.CreatedAtUtc)</div>
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold">@tx.TakenByDisplayName</div>
+                                        <div class="small text-secondary">배치 등록자: @tx.BatchOwnerDisplayName</div>
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold font-monospace">#@tx.BatchId</div>
+                                        <div class="small text-secondary">@FormatDateTime(tx.RoastedAtUtc)</div>
+                                        <span class="badge @GetBatchStatusBadgeClass(tx) mt-1">@GetBatchStatusText(tx)</span>
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold">@tx.ItemName</div>
+                                        <div class="small text-secondary description-preview" title="@tx.ItemDescription">
+                                            @GetDescriptionPreview(tx.ItemDescription)
+                                        </div>
+                                        <div class="small text-body-secondary mt-1">
+                                            @($"{tx.ItemSize:N0}g / {FormatKrw(tx.ItemPrice)}")
+                                        </div>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <div class="fw-semibold">@($"{tx.Quantity:N0}개")</div>
+                                        <div class="small text-secondary">@GetUnitWeightText(tx)</div>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <div class="fw-semibold">@($"{tx.EstimatedWeightGrams:N0}g")</div>
+                                        <div class="small text-secondary">@GetRemainingWeightText(tx) 남음</div>
+                                    </td>
+
+                                    <td class="text-end">
+                                        <div class="fw-semibold">@FormatKrw(tx.EstimatedPayableAmount)</div>
+                                        <div class="small text-secondary">@FormatUnitKrw(GetUnitPrice(tx)) / 개</div>
+                                    </td>
+                                </tr>
+
+                                @if (IsExpanded(tx.BatchTakeId))
+                                {
+                                    <tr class="transaction-detail-row">
+                                        <td colspan="8">
+                                            <div class="row g-3 p-2">
+                                                <div class="col-12 col-xl-4">
+                                                    <div class="detail-panel h-100">
+                                                        <h6 class="mb-3">거래 요약</h6>
+
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">트랜잭션 번호</span>
+                                                            <span class="fw-semibold font-monospace">T#@tx.BatchTakeId</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">생성 시각</span>
+                                                            <span>@FormatDateTime(tx.CreatedAtUtc)</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">가져간 사용자</span>
+                                                            <span class="fw-semibold">@tx.TakenByDisplayName</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">배치 번호</span>
+                                                            <span class="fw-semibold font-monospace">#@tx.BatchId</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">배치 상태</span>
+                                                            <span class="badge @GetBatchStatusBadgeClass(tx)">@GetBatchStatusText(tx)</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">원두</span>
+                                                            <span class="fw-semibold">@tx.ItemName</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">배치 등록자</span>
+                                                            <span>@tx.BatchOwnerDisplayName</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">가져간 수량</span>
+                                                            <span>@($"{tx.Quantity:N0}개")</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">추정 중량</span>
+                                                            <span>@($"{tx.EstimatedWeightGrams:N0}g")</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">개당 중량</span>
+                                                            <span>@GetUnitWeightText(tx)</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">개당 금액</span>
+                                                            <span>@FormatUnitKrw(GetUnitPrice(tx))</span>
+                                                        </div>
+                                                        <div class="mini-kv">
+                                                            <span class="text-secondary">추정 결제 금액</span>
+                                                            <span class="fw-semibold">@FormatKrw(tx.EstimatedPayableAmount)</span>
+                                                        </div>
+
+                                                        <div class="progress mt-3" style="height: 8px;">
+                                                            <div class="progress-bar @(tx.IsBatchActive ? string.Empty : "bg-secondary")"
+                                                                 style="@($"width: {GetRemainingPercent(tx)}%;")">
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="small text-secondary mt-3">
+                                                            수량 대비 단가로 계산한 추정 금액이며, 실제 정산 정책에 따라 달라질 수 있습니다.
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12 col-xl-4">
+                                                    <div class="detail-panel h-100">
+                                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                                            <h6 class="mb-0">동일 배치 사용자별 누적</h6>
+                                                            <span class="small text-secondary">@($"{batchUserRows.Count:N0}명")</span>
+                                                        </div>
+
+                                                        @if (batchUserRows.Count == 0)
+                                                        {
+                                                            <div class="text-secondary small">
+                                                                동일 배치의 누적 사용 이력이 없습니다.
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm align-middle mb-0">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>사용자</th>
+                                                                            <th class="text-end">수량</th>
+                                                                            <th class="text-end">중량</th>
+                                                                            <th class="text-end">금액</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach (var row in batchUserRows)
+                                                                        {
+                                                                            <tr>
+                                                                                <td class="fw-semibold">@row.UserDisplayName</td>
+                                                                                <td class="text-end">@($"{row.Quantity:N0}개")</td>
+                                                                                <td class="text-end">@($"{row.WeightGrams:N0}g")</td>
+                                                                                <td class="text-end fw-semibold">@FormatKrw(row.PayableAmount)</td>
+                                                                            </tr>
+                                                                        }
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12 col-xl-4">
+                                                    <div class="detail-panel h-100">
+                                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                                            <h6 class="mb-0">최근 동일 배치 이력</h6>
+                                                            <span class="small text-secondary">최대 8건</span>
+                                                        </div>
+
+                                                        @if (batchHistoryRows.Count == 0)
+                                                        {
+                                                            <div class="text-secondary small">
+                                                                표시할 이력이 없습니다.
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="batch-history-timeline">
+                                                                @foreach (var row in batchHistoryRows)
+                                                                {
+                                                                    <div class="batch-history-item">
+                                                                        <span class="batch-history-dot"></span>
+
+                                                                        <div class="d-flex justify-content-between align-items-start gap-3">
+                                                                            <div class="min-w-0">
+                                                                                <div class="fw-semibold">
+                                                                                    @row.TakenByDisplayName
+                                                                                    @if (row.BatchTakeId == tx.BatchTakeId)
+                                                                                    {
+                                                                                        <span class="badge text-bg-success ms-2">현재</span>
+                                                                                    }
+                                                                                </div>
+                                                                                <div class="small text-secondary">
+                                                                                    @($"T#{row.BatchTakeId} · {row.Quantity:N0}개")
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div class="small text-secondary font-monospace text-nowrap">
+                                                                                @FormatDateTime(row.CreatedAtUtc)
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="d-lg-none p-3 transaction-mobile-list">
+                @foreach (var tx in pagedTransactions)
+                {
+                    var batchUserRows = GetBatchUserSummaryRows(tx.BatchId);
+                    var batchHistoryRows = GetBatchHistoryRows(tx.BatchId);
+
+                    <article class="mobile-transaction-card @(tx.IsBatchActive ? string.Empty : "is-ended")" @key="tx.BatchTakeId">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="mobile-min-w-0 flex-grow-1">
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <span class="badge text-bg-dark font-monospace">T#@tx.BatchTakeId</span>
+                                    <span class="badge text-bg-light border font-monospace">B#@tx.BatchId</span>
+                                    <span class="badge @GetBatchStatusBadgeClass(tx)">@GetBatchStatusText(tx)</span>
+                                </div>
+
+                                <h6 class="mb-1 text-break">@tx.ItemName</h6>
+                                <div class="small text-secondary text-break">
+                                    @tx.TakenByDisplayName · 등록자 @tx.BatchOwnerDisplayName
+                                </div>
+                                <div class="small text-secondary">@FormatDateTime(tx.CreatedAtUtc)</div>
+                            </div>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary no-border-radius flex-shrink-0"
+                                    @onclick="() => ToggleExpand(tx.BatchTakeId)">
+                                <i class="bi @(IsExpanded(tx.BatchTakeId) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                            </button>
+                        </div>
+
+                        <div class="mobile-description small text-secondary mt-2">
+                            @GetDescriptionPreview(tx.ItemDescription)
+                        </div>
+
+                        <div class="progress mt-3" style="height: 8px;">
+                            <div class="progress-bar @(tx.IsBatchActive ? string.Empty : "bg-secondary")"
+                                 style="@($"width: {GetRemainingPercent(tx)}%;")">
+                            </div>
+                        </div>
+
+                        <div class="mobile-stat-grid mt-3">
+                            <div class="mobile-stat-box">
+                                <span>가져간 수량</span>
+                                <strong>@($"{tx.Quantity:N0}개")</strong>
+                                <small>@GetUnitWeightText(tx)</small>
+                            </div>
+
+                            <div class="mobile-stat-box">
+                                <span>추정 중량</span>
+                                <strong>@($"{tx.EstimatedWeightGrams:N0}g")</strong>
+                                <small>@GetRemainingWeightText(tx) 남음</small>
+                            </div>
+
+                            <div class="mobile-stat-box">
+                                <span>추정 금액</span>
+                                <strong>@FormatKrw(tx.EstimatedPayableAmount)</strong>
+                                <small>@FormatUnitKrw(GetUnitPrice(tx)) / 개</small>
+                            </div>
+
+                            <div class="mobile-stat-box">
+                                <span>배치 상태</span>
+                                <strong>@GetBatchStatusText(tx)</strong>
+                                <small>@($"{tx.RemainingCount:N0}개 남음")</small>
+                            </div>
+                        </div>
+
+                        @if (IsExpanded(tx.BatchTakeId))
+                        {
+                            <section class="mobile-section">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">거래 요약</h6>
+                                    <span class="small text-secondary">상세</span>
+                                </div>
+
+                                <div class="mini-kv">
+                                    <span class="text-secondary">트랜잭션 번호</span>
+                                    <span class="fw-semibold font-monospace">T#@tx.BatchTakeId</span>
+                                </div>
+                                <div class="mini-kv">
+                                    <span class="text-secondary">배치 번호</span>
+                                    <span class="fw-semibold font-monospace">#@tx.BatchId</span>
+                                </div>
+                                <div class="mini-kv">
+                                    <span class="text-secondary">원두</span>
+                                    <span class="fw-semibold">@tx.ItemName</span>
+                                </div>
+                                <div class="mini-kv">
+                                    <span class="text-secondary">가져간 사용자</span>
+                                    <span>@tx.TakenByDisplayName</span>
+                                </div>
+                                <div class="mini-kv">
+                                    <span class="text-secondary">배치 등록자</span>
+                                    <span>@tx.BatchOwnerDisplayName</span>
+                                </div>
+                                <div class="mini-kv">
+                                    <span class="text-secondary">추정 중량</span>
+                                    <span>@($"{tx.EstimatedWeightGrams:N0}g")</span>
+                                </div>
+                                <div class="mini-kv">
+                                    <span class="text-secondary">개당 금액</span>
+                                    <span>@FormatUnitKrw(GetUnitPrice(tx))</span>
+                                </div>
+                                <div class="mini-kv">
+                                    <span class="text-secondary">추정 결제 금액</span>
+                                    <span class="fw-semibold">@FormatKrw(tx.EstimatedPayableAmount)</span>
+                                </div>
+                            </section>
+
+                            <section class="mobile-section">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">동일 배치 사용자별 누적</h6>
+                                    <span class="small text-secondary">@($"{batchUserRows.Count:N0}명")</span>
+                                </div>
+
+                                @if (batchUserRows.Count == 0)
+                                {
+                                    <div class="text-secondary small">
+                                        동일 배치의 누적 사용 이력이 없습니다.
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var row in batchUserRows)
+                                    {
+                                        <div class="mobile-list-item">
+                                            <div class="mobile-min-w-0">
+                                                <div class="fw-semibold text-break">@row.UserDisplayName</div>
+                                                <div class="small text-secondary">
+                                                    @($"{row.Quantity:N0}개 · {row.WeightGrams:N0}g")
+                                                </div>
+                                            </div>
+
+                                            <div class="text-end fw-semibold text-nowrap">
+                                                @FormatKrw(row.PayableAmount)
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </section>
+
+                            <section class="mobile-section">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">최근 동일 배치 이력</h6>
+                                    <span class="small text-secondary">최대 8건</span>
+                                </div>
+
+                                @if (batchHistoryRows.Count == 0)
+                                {
+                                    <div class="text-secondary small">
+                                        표시할 이력이 없습니다.
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var row in batchHistoryRows)
+                                    {
+                                        <div class="mobile-list-item">
+                                            <div class="mobile-min-w-0">
+                                                <div class="fw-semibold text-break">
+                                                    @row.TakenByDisplayName
+                                                    @if (row.BatchTakeId == tx.BatchTakeId)
+                                                    {
+                                                        <span class="badge text-bg-success ms-2">현재</span>
+                                                    }
+                                                </div>
+                                                <div class="small text-secondary">
+                                                    @($"T#{row.BatchTakeId} · {row.Quantity:N0}개")
+                                                </div>
+                                            </div>
+
+                                            <div class="text-end small text-secondary text-nowrap">
+                                                @FormatDateTime(row.CreatedAtUtc)
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </section>
+                        }
+                    </article>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="card-footer bg-body d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <div class="small text-secondary">
+            페이지 @filter.Page / @TotalPages
+        </div>
+
+        @if (totalCount > 0)
+        {
+            <nav aria-label="트랜잭션 페이지 이동">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(filter.Page == 1 ? "disabled" : string.Empty)">
+                        <button type="button"
+                                class="page-link"
+                                @onclick="() => MovePageAsync(filter.Page - 1)"
+                                disabled="@(filter.Page == 1 || isLoading)">
+                            이전
+                        </button>
+                    </li>
+
+                    @foreach (var page in GetVisiblePages())
+                    {
+                        <li class="page-item @(page == filter.Page ? "active" : string.Empty)">
+                            <button type="button"
+                                    class="page-link"
+                                    @onclick="() => MovePageAsync(page)"
+                                    disabled="@isLoading">
+                                @(page.ToString())
+                            </button>
+                        </li>
+                    }
+
+                    <li class="page-item @(filter.Page == TotalPages ? "disabled" : string.Empty)">
+                        <button type="button"
+                                class="page-link"
+                                @onclick="() => MovePageAsync(filter.Page + 1)"
+                                disabled="@(filter.Page == TotalPages || isLoading)">
+                            다음
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

@@ -60,8 +60,8 @@ namespace coffeetime.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_package_batches", x => x.BatchId);
-                    table.CheckConstraint("CK_pkg_batch_count", "`BatchCount` BETWEEN 1 AND 30");
-                    table.CheckConstraint("CK_pkg_remaining_count", "`RemainingCount` BETWEEN 0 AND 30");
+                    table.CheckConstraint("CK_pkg_batch_count", "`BatchCount` BETWEEN 1 AND 100");
+                    table.CheckConstraint("CK_pkg_remaining_count", "`RemainingCount` BETWEEN 0 AND 100");
                     table.ForeignKey(
                         name: "FK_pkg_batch_item",
                         column: x => x.ItemId,
@@ -91,7 +91,7 @@ namespace coffeetime.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_batch_takes", x => x.BatchTakeId);
-                    table.CheckConstraint("CK_batch_take_qty", "`Quantity` BETWEEN 1 AND 10");
+                    table.CheckConstraint("CK_batch_take_qty", "`Quantity` BETWEEN 1 AND 100");
                     table.ForeignKey(
                         name: "FK_batch_take_batch",
                         column: x => x.BatchId,
