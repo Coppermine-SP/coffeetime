@@ -102,7 +102,7 @@ namespace coffeetime
                 return Results.Challenge(
                     new AuthenticationProperties
                     {
-                        RedirectUri = string.IsNullOrWhiteSpace(returnUrl) ? "/main" : returnUrl
+                        RedirectUri = string.IsNullOrWhiteSpace(returnUrl) ? "/dashboard" : returnUrl
                     },
                     new[] { OpenIdConnectDefaults.AuthenticationScheme });
             });
