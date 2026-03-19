@@ -19,6 +19,9 @@ namespace coffeetime
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             var builder = WebApplication.CreateBuilder(args);
 
+            // Docker containerized environment configuration
+            builder.Configuration.AddJsonFile(@"C:\config\appsettings.json", optional: true, reloadOnChange: true);
+
             // Add services to the container.
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
@@ -34,8 +37,9 @@ namespace coffeetime
                     ForwardedHeaders.XForwardedProto |
                     ForwardedHeaders.XForwardedHost;
 
+                options.KnownProxies.Clear();
+
                 options.KnownProxies.Add(IPAddress.Parse(cfg["AllowedProxy"]!));
-                options.AllowedHosts.Add(cfg["AllowedHost"]!);
             });
             builder.Services.AddMemoryCache();
             builder.Services.AddCascadingAuthenticationState();
@@ -97,6 +101,12 @@ namespace coffeetime
             builder.Services.AddScoped<ItemService>();
             builder.Services.AddScoped<UserService>();
             var app = builder.Build();
+            app.UseForwardedHeaders();
+            app.Use((context, next) =>
+            {
+                context.Request.Scheme = "https";
+                return next(context);
+            });
             app.MapGet("/oauth/signin", (string? returnUrl) =>
             {
                 return Results.Challenge(
@@ -136,15 +146,12 @@ namespace coffeetime
                 }
             });
 
-            app.UseForwardedHeaders();
-            app.UseHttpsRedirection();
-            app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+            app.UseAntiforgery();
             app.MapStaticAssets();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseAntiforgery();
             app.MapRazorComponents<App>()
-                .AddInteractiveServerRenderMode();
+                .AddInteractiveServerRenderMode(o => o.DisableWebSocketCompression = true);
             app.Run();
         }
     }

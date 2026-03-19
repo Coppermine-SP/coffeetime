@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace coffeetime.Components.Layout
 {
-    public partial class MainLayout(ILogger<MainLayout> logger, ModalService modal, NavigationManager navi) : LayoutComponentBase
+    public partial class MainLayout(ModalService modal, NavigationManager navi) : LayoutComponentBase
     {
         [CascadingParameter]
         private Task<AuthenticationState>? authenticationStateTask { get; set; }
