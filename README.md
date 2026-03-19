@@ -71,4 +71,19 @@ docker run -p 8080:8080 coffeetime
 ---
 ### Showcase
 
+**SSO sign-in page**
+
+<img width="1606" height="869" alt="signin" src="https://github.com/user-attachments/assets/3576ff8d-92ee-402b-9345-f92e9e6b5c90" />
+
+**Dashboard**
+
+<img width="1588" height="1025" alt="dashboard" src="https://github.com/user-attachments/assets/939a1b8e-62f2-4158-94bd-d9c7da690254" />
+
+**Transactions**
+
+<img width="1607" height="869" alt="transactions" src="https://github.com/user-attachments/assets/1502b845-1564-44ac-9aea-bb05fc9cae24" />
+
+**Batches**
+
+<img width="1607" height="869" alt="batches" src="https://github.com/user-attachments/assets/0a7f8263-d65f-42bc-8449-5b52cb573ad2" />
 
